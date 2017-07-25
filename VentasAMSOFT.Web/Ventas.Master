@@ -1,0 +1,36 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Ventas.master.cs" Inherits="VentasAMSOFT.Web.Ventas" %>
+
+<!DOCTYPE html>
+
+<html>
+<head runat="server">
+    <title>Ventas AMSOFT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="~/Content/bootstrap.min.css" type="text/css" rel="stylesheet" />
+    <link href="~/Content/app.css" type="text/css" rel="stylesheet" />
+    <asp:ContentPlaceHolder ID="SeccionEstilos" runat="server"></asp:ContentPlaceHolder>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="Index.aspx">
+                        <img alt="Ventas AMSOFT" src="...">
+                    </a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="Clientes/Index.aspx">Clientes</a></li>
+                        <li><a href="Telefonos/Index.aspx">Telefonos</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <asp:ContentPlaceHolder ID="SeccionContenido" runat="server"></asp:ContentPlaceHolder>
+    </div>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/jquery-3.1.1.min.js"></script>
+    <asp:ContentPlaceHolder ID="SeccionScripts" runat="server"></asp:ContentPlaceHolder>
+</body>
+</html>

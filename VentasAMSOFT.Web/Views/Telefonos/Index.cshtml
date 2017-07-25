@@ -1,0 +1,98 @@
+﻿@using VentasAMSOFT.Model
+@model IEnumerable<Telefono>
+
+@{
+    ViewBag.Title = "Telefonos";
+    Layout = "~/Views/Shared/_VentasLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <a href="@Url.Action("Adicionar", "Telefonos")" class="btn btn-info btn-outline btn-xs pull-right">Adicionar un Telefono</a>
+        <p class="text-muted"><a href="@Url.Action("Index", "Home")">Home</a> > Registros de Telefonos</p>
+    </div>
+</div>
+
+@if (Model == null || Model.Count() == 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <p>Aun no se encuentran telefonos registrados. <a href="@Url.Action("Adicionar", "Telefonos")">Registra</a> un telefono para continuar. </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10 col-xs-12">
+            <div id="divMensajes"></div>
+            @using (Html.BeginForm("Editar", "Telefonos", FormMethod.Post, new { @class = "form-horizontal" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="well">
+                    <div class="table-responsive">
+                        <table class="table table-condensed table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Año</th>
+                                    <th>Cantidad Disponible</th>
+                                    <th>Precio de Venta</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count(); i++)
+                                {
+                                    Telefono telefono = Model.ElementAt(i);
+                                    <tr class="@(telefono.Habilitado?"":"warning")">
+                                        <td>
+                                            <input name="[@i].IdTelefono" value="@telefono.IdTelefono" type="hidden" />
+                                            <input name="[@i].Habilitado" value="@telefono.Habilitado.ToString()" type="hidden" />
+                                            <input name="[@i].Marca" class="form-control-mdl" value="@telefono.Marca" type="text" placeholder="Marca..." autocomplete="off" required />
+                                        </td>
+                                        <td><input name="[@i].Modelo" class="form-control-mdl" value="@telefono.Modelo" type="text" placeholder="Modelo..." autocomplete="off" required /></td>
+                                        <td><input name="[@i].Ano" class="form-control-mdl control-numerico" value="@telefono.Ano" type="number" placeholder="Año..." autocomplete="off" required /></td>
+                                        <td><input name="[@i].CantidadDisponible" class="form-control-mdl control-numerico" value="@telefono.CantidadDisponible" type="number" placeholder="Cantidad Disponible..." autocomplete="off" required /></td>
+                                        <td><input name="[@i].PrecioVenta" class="form-control-mdl control-numerico control-numerico-decimal" value="@telefono.PrecioVenta" type="number" placeholder="Precio de Venta..." autocomplete="off" required /></td>
+                                        <td>
+                                            @if (!telefono.Habilitado)
+                                            {
+                                                <a href="@Url.Action("Habilitar", "Telefonos", new { telefono = telefono.IdTelefono })" class="btn btn-xs btn-outline btn-info">Habilitar</a>
+                                            }
+                                            else
+                                            {
+                                                <a href="@Url.Action("Inhabilitar", "Telefonos", new { telefono = telefono.IdTelefono })" class="btn btn-xs btn-outline btn-warning">Inhabilitar</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-success btn-outline pull-right">Guardar Cambios</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts{
+    <script type="text/javascript">
+
+        //Permitir solamente las entradas numericas del teclado.
+        $('.control-numerico').keypress(function (key) {
+            var incluirDecimal = $(this).hasClass("control-numerico-decimal");
+            if ((key.charCode < 48 || key.charCode > 57) && key.charCode != 0 && key.charCode != 8 && key.charCode != 9 && (!incluirDecimal || key.charCode != 44)) return false;
+        });
+
+    </script>
+}

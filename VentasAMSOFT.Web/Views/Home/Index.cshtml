@@ -1,0 +1,264 @@
+﻿@using VentasAMSOFT.Model;
+
+@model Venta
+@{
+    ViewBag.Title = "Registrar Venta";
+    Layout = "~/Views/Shared/_VentasLayout.cshtml";
+    IEnumerable<Cliente> clientes = ViewBag.Clientes;
+    IEnumerable<Telefono> telefonos = ViewBag.Telefonos;
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>@ViewBag.Title</h2>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-9">
+        @* Valida que hayan datos de clientes y telefonos para poder registrar las ventas. *@
+        @if (clientes == null || clientes.Count() == 0 || telefonos == null || telefonos.Count() == 0)
+        {
+            <p>Aun no hay registros de clientes o telefonos en la base de datos. Por favor registra los datos de <a href="@Url.Action("Adicionar", "Telefonos")">inventario</a> o de <a href="@Url.Action("Adicionar", "Clientes")">clientes</a> para continuar.</p>
+        }
+        else
+        {
+            <div id="divMensajes"></div>
+            using (Html.BeginForm("GuardarVenta", "Home", FormMethod.Post, new { id = "formularioVenta" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="col-md-5 col-sm-12 col-xs-12">
+                        <div class="well">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class=""><strong>Fecha</strong></p>
+                                </div>
+                                <div class="col-md-8">
+                                    <p>@DateTime.UtcNow.ToShortDateString()</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class=""><strong>Cliente</strong></p>
+                                </div>
+                                <div class="col-md-8">
+                                    <select id="selectCliente" name="IdCliente" class="form-control-mdl" onchange="actualizarInformacionCliente(this)" required>
+                                        <option disabled selected value="@Guid.Empty">Seleccionar...</option>
+                                        @foreach (Cliente cliente in clientes)
+                                        {
+                                            <option value="@cliente.IdCliente" data-direccion="@cliente.Direccion" data-telefono="@cliente.Telefono">@cliente.Nombre</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class=""><strong>Direccion</strong></p>
+                                </div>
+                                <div class="col-md-8"><p id="direccionCliente"></p></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class=""><strong>Telefono</strong></p>
+                                </div>
+                                <div class="col-md-8"><p id="telefonoCliente"></p></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="well">
+                            <table id="tablaDetallesDeVenta" class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Telefono</th>
+                                        <th width="15%">Cantidad</th>
+                                        <th width="15%">Precio</th>
+                                        <th width="15%">Total</th>
+                                        <th width="10%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="detalle" data-total="">
+                                        <td>
+                                            <select name="Detalles[0].IdTelefono" class="form-control-mdl" onchange="actualizarTotalDetalle(this)" required>
+                                                <option disabled selected value="@Guid.Empty">Seleccionar...</option>
+                                                @foreach (Telefono telefono in telefonos)
+                                                {
+                                                    <option value="@telefono.IdTelefono" data-precio="@telefono.PrecioVenta">@telefono.ToString()</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td><input name="Detalles[0].Cantidad" class="form-control-mdl detalle-cantidad" type="number" placeholder="Cantidad..." onchange="actualizarTotalDetalle(this)" onkeyup="actualizarTotalDetalle(this)" min="0" autocomplete="off" required /></td>
+                                        <td><span class="pull-right detalle-precio">$ 0,00</span></td>
+                                        <td><span class="pull-right detalle-total">$ 0,00</span></td>
+                                        <td>
+                                            <span class="btn btn-xs btn-success btn-outline" onclick="adicionarDetalleDeVenta()"><i class="glyphicon glyphicon-plus"></i></span>
+                                            <span class="btn btn-xs btn-danger btn-outline" onclick="eliminarDetalleDeVenta(this)"><i class="glyphicon glyphicon-minus"></i></span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;</td>
+                                        <td>&nbsp;</td>
+                                        <td><strong>Total</strong></td>
+                                        <td><strong id="celdaTotal" class="pull-right">$ 0.00</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-success btn-outline pull-right">Guardar Venta</button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+
+        $(function () {
+            //Actualizar el panel de cliente.
+            actualizarInformacionCliente(document.getElementById("selectCliente"));
+
+            //Bloquear caracteres no numericos en los inputs de cantidad
+            $('.detalle-cantidad').keypress(function (key) {
+                if ((key.charCode < 48 || key.charCode > 57) && key.charCode != 0 && key.charCode != 8 && key.charCode != 9) return false;
+            });
+
+            //Enviar el formulario de manera asincrona
+            $("#formularioVenta").submit(function (e) {
+                e.preventDefault();
+
+                var actionUrl = $(this).attr("action");
+                $.post(actionUrl, $(this).serialize(), function (res) {
+
+                    if (res.Exito) {
+                        limpiarCampos();
+                        var mensaje = '<div class="alert alert-success alert-dismissable fade in">'
+                            + '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>'
+                            + 'Se ha registrado la venta.'
+                            + '</div>';
+                        $("#divMensajes").append(mensaje);
+
+                    } else {
+                        var mensaje = '<div class="alert alert-warning alert-dismissable fade in">'
+                            + '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>'
+                            + '<strong>Advertencia</strong> ' + res.Mensaje + '.'
+                            + '</div>';
+                        $("#divMensajes").append(mensaje);
+                    }
+                });
+            });
+        });
+
+        var cantidadDeDetalles = 1;
+        var opcionesTelefonos = "";
+
+        //Limpiar los campos del formulario. Se utiliza al terminar de registrar una venta.
+        function limpiarCampos() {
+            $("tr.detalle").remove();
+            cantidadDeDetalles = 0;
+            adicionarDetalleDeVenta();
+            actualizarTotal();
+            $("#formularioVenta")[0].reset();
+            $("#direccionCliente").html("<i class='text-muted'>Sin Especificar</i>");
+            $("#telefonoCliente").html("<i class='text-muted'>Sin Especificar</i>");
+        }
+
+        //Conversion de las entidades telefonos C# a un arreglo JS para ser usado al cargar dinamicamente los detalles de las ventas.
+        @{
+            if (telefonos != null)
+            {
+                foreach (Telefono telefono in telefonos)
+                {
+                    @:opcionesTelefonos += '<option value="@telefono.IdTelefono" data-precio="@telefono.PrecioVenta">@telefono.ToString()</option>';
+        }
+                     }
+                 }
+
+        //Adiciona una nueva fila en la tabla de ventas, representando un nuevo dellase.
+        function adicionarDetalleDeVenta() {
+
+            var html = '<tr class="detalle">'
+                + '<td>'
+                + '<select name="Detalles[' + cantidadDeDetalles + '].IdTelefono" class="form-control-mdl" onchange="actualizarTotalDetalle(this)" required>'
+                + '<option disabled selected value="@Guid.Empty">Seleccionar...</option>'
+                + opcionesTelefonos
+                + '</select>'
+                + '</td >'
+                + '<td><input name="Detalles[' + cantidadDeDetalles + '].Cantidad"  class="form-control-mdl detalle-cantidad" type="number" placeholder="Cantidad..."  onchange="actualizarTotalDetalle(this)" onkeyup="actualizarTotalDetalle(this)" min="0" autocomplete="off" required /></td>'
+                + '<td><span class="pull-right detalle-precio">$ 0,00</span></td>'
+                + '<td><span class="pull-right detalle-total">$ 0.00</span></td>'
+                + '<td>'
+                + '<span class="btn btn-xs btn-success btn-outline" onclick="adicionarDetalleDeVenta()"><i class="glyphicon glyphicon-plus"></i></span>'
+                + '<span class="btn btn-xs btn-danger btn-outline" onclick="eliminarDetalleDeVenta(this)"><i class="glyphicon glyphicon-minus"></i></span>'
+                + '</td>'
+                + '</tr>';
+            $('#tablaDetallesDeVenta > tbody > tr').eq(cantidadDeDetalles).before(html);
+            cantidadDeDetalles++;
+        }
+
+        //Elimina un detalle de venta de la tabla, solamente si hay mas de un detalle en ella.
+        function eliminarDetalleDeVenta(btn) {
+            if (cantidadDeDetalles > 1) {
+                var detalle = $(btn).parent().parent().remove();
+                cantidadDeDetalles--;
+
+                // Reescribir los indices del arreglo de detalles, para el binding apropiado con la accion en el control MVC.
+                $("#tablaDetallesDeVenta").find("tr.detalle").each(function (idx) {
+                    $(this).find("input.form-control-mdl").attr("name", "Detalles[" + idx + "].Cantidad");
+                    $(this).find("select.form-control-mdl").attr("name", "Detalles[" + idx + "].IdTelefono");
+                });
+
+                //actualizar total de la venta
+                actualizarTotal();
+            }
+        }
+
+        //Actauliza los valores totales del detalle, cuando hayan cambios en la seleccion del telefono o de la cantidad vendida.
+        function actualizarTotalDetalle(input) {
+            var detalle = $(input).parent().parent();
+            var opcionTelefono = detalle.find("select").find(":selected");
+
+            var precioVenta = parseFloat(opcionTelefono.data("precio")) || 0;
+            var cantidad = parseInt(detalle.find("input.form-control-mdl").val()) || 0;
+
+            var totalDetalle = precioVenta * cantidad;
+
+            detalle.find("span.detalle-total").text('$ ' + totalDetalle.format(2, 3, '.', ','));
+            detalle.find("span.detalle-precio").text('$ ' + precioVenta.format(2, 3, '.', ','));
+            detalle.data("total", totalDetalle);
+
+            //Actualizar el total de la Venta
+            actualizarTotal();
+        }
+
+        //Actualiza el total de la venta, tomando los totales de cada uno de los detalles.
+        function actualizarTotal() {
+            var totalVenta = 0;
+            $("#tablaDetallesDeVenta").find("tr.detalle").each(function () {
+                totalVenta += parseFloat($(this).data("total")) || 0;
+            });
+            $("#celdaTotal").text('$ ' + totalVenta.format(2, 3, '.', ','));
+        }
+
+        //Actualiza la informacion del cliente (Direccion y Telefono) cuando haya un cambio en la seleccion
+        function actualizarInformacionCliente(selectCliente) {
+            var opcion = $(selectCliente).find(":selected");
+            var direccion = opcion.data("direccion") || "<i class='text-muted'>Sin Especificar</i>"
+            var telefono = opcion.data("telefono") || "<i class='text-muted'>Sin Especificar</i>"
+            $("#direccionCliente").html(direccion);
+            $("#telefonoCliente").html(telefono);
+        }
+
+    </script>
+}

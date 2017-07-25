@@ -1,0 +1,218 @@
+﻿@using VentasAMSOFT.Model
+@using System.Globalization
+@model IEnumerable<Venta>
+
+@{
+    ViewBag.Title = "Reportes";
+    Layout = "~/Views/Shared/_VentasLayout.cshtml";
+
+    //Obtiene la fecha mas antigua del conjunto de ventas.
+    DateTime fechaMinima = Model != null && Model.Count() > 0 ? Model.Min(v => v.Fecha) : DateTime.MinValue;
+    //Obtiene la fecha mas reciente del conjunto de ventas.
+    DateTime fechaMaxima = Model != null && Model.Count() > 0 ? Model.Max(v => v.Fecha) : DateTime.UtcNow;
+    //Filtra los telefonos vendidos y obtiene un arreglo de Marcas y sus modelos.
+    var MarcasModelos = Model != null && Model.Count() > 0 ? Model.SelectMany(v => v.Detalles)
+        .Select(d => new { Marca = d.Telefono.Marca, Modelo = d.Telefono.Modelo })
+        .Distinct()
+        .GroupBy(d => d.Marca)
+        .Select(gr => new { Marca = gr.Key, Modelos = gr.Select(d => d.Modelo).ToArray() }) : null;
+
+    //Establecer la localizacion para que no haya inconvenientes con los formatos de fechas en modo desarrollo y despliegue a produccion.
+    System.Threading.Thread.CurrentThread.CurrentCulture = new CultureInfo("es-CO");
+
+}
+<div class="row">
+    <div class="col-lg-12">
+        <a id="generarPDF" onclick="return xepOnline.Formatter.Format('divVentas');" class="btn btn-info btn-outline btn-xs pull-right" style="@(Model==null || Model.Count()==0 ? "display:none;":"")"><i class="glyphicon glyphicon-file"></i> Descargar PDF</a>
+        <p class="text-muted"><a href="@Url.Action("Index", "Home")">Home</a> > Reportes de Ventas</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-10 col-xs-12">
+        @if (Model == null || Model.Count() == 0)
+        {
+            <p>No hay ventas registradas para reportar</p>
+        }
+        else
+        {
+            <div class="well">
+                <div class="row">
+                    <label for="datepicker" class="col-sm-2 control-label">Fechas</label>
+                    <div class="col-sm-8">
+                        <div class="input-daterange input-group" id="datepicker">
+                            <input id="fechaInicio" type="text" class="input-sm form-control" name="start" onkeydown="return false" value="@fechaMinima.ToShortDateString()" />
+                            <span class="input-group-addon">hasta</span>
+                            <input id="fechaFin" type="text" class="input-sm form-control" name="end" onkeydown="return false" value="@fechaMaxima.ToShortDateString()" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-sm-2 control-label">Marca</label>
+                    <div class="col-sm-4 col-xs-12">
+                        <select id="selectMarca" class="form-control" multiple>
+                            @for (int i = 0; i < MarcasModelos.Count(); i++)
+                            {
+                                <option value="@MarcasModelos.ElementAt(i).Marca">@MarcasModelos.ElementAt(i).Marca</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-sm-2 control-label">Modelo</label>
+                    <div class="col-sm-4 col-xs-12">
+                        <select id="selectModelo" class="form-control" multiple>
+                            @for (int i = 0; i < MarcasModelos.Count(); i++)
+                            {
+                                foreach (string modelo in MarcasModelos.ElementAt(i).Modelos)
+                                {
+                                    <option value="@MarcasModelos.ElementAt(i).Marca" data-modelo="@modelo">@modelo</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div id="divVentas" class="table-responsive" style="padding-top:10px;">
+                    <p id="mensajeReporte"></p>
+                    <table id="tablaVentas" class="table table-condensed table-bordered">
+                        <thead>
+                            <tr>
+                                <th width="80%">Detalle de la Venta</th>
+                                <th width="20%">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaVentasBody">
+                            @foreach (Venta venta in Model)
+                            {
+                                <tr class="venta" data-monto="@venta.Monto" data-fecha="@venta.Fecha.ToShortDateString()" data-marcas="@string.Join(",", venta.Detalles.Select(d=>d.Telefono.Marca).Distinct())" data-modelos="@string.Join(",", venta.Detalles.Select(d=>d.Telefono.Modelo).Distinct())">
+                                    <td>
+                                        <table class="table table-condensed table-bordered">
+                                            <tbody>
+                                                @foreach (DetalleVenta detalle in venta.Detalles)
+                                                {
+                                                    <tr>
+                                                        <td width="80%"><small class="text-muted">Telefono:</small> @detalle.Telefono.ToString()</td>
+                                                        <td width="20%"><small class="text-muted">Cantidad vendida:</small> @detalle.Cantidad</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                        <small class="pull-right text-muted">@venta.Fecha.ToLocalTime().ToString()</small>
+                                        <small class="text-muted">Cliente: @venta.Cliente.Nombre</small>
+                                    </td>
+                                    <td><strong class="pull-right">@venta.Monto.ToString("C")</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <table id="tablaTotalVentas" class="table table-condensed table-bordered">
+                        <tbody>
+                            <tr>
+                                <td width="80%"><strong>TOTAL</strong></td>
+                                <td height="20%"><strong class="pull-right" id="totalVentas">@Model.Sum(v => v.Monto).ToString("C")</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Styles {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/css/bootstrap-datepicker.css" type="text/css" rel="stylesheet" />
+}
+
+
+@section Scripts {
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/locales/bootstrap-datepicker.es.min.js"></script>
+    <script type="text/javascript" src="~/Scripts/xepOnline.jqPlugin.js"></script>
+    <script>
+
+        //Actualizar las opciones de las selecciones de modelos de acuerdo a las marcas seleccionadas, cuando termine de cargar la pagina.
+        $(function () {
+            actualizarMarcasYModelos();
+        });
+
+        //Instancia el control de seleccion de fechas en modo rango.
+        var datePicker = $('.input-daterange').datepicker({
+            language: "es",
+            endDate: "@fechaMaxima.ToShortDateString()",
+            startDate: "@fechaMinima.ToShortDateString()",
+            clearBtn: true
+        }).change(actualizarTablaVentas);
+
+        $("#selectMarca").change(actualizarMarcasYModelos);
+        $("#selectModelo").change(actualizarTablaVentas);
+
+        //Muestra solamente las ventas que cumplen los filtros de fecha, marca y modelo.
+        function actualizarTablaVentas() {
+            // Clonar las ventas para no perderlas cuando se filtre de nuevo.
+            if ($("#tablaVentas").data('ventas') === undefined) {
+                $("#tablaVentas").data("ventas", $("#tablaVentas tr.venta").clone());
+            }
+            //Obtener los filtros
+            var inicio = $('#fechaInicio').val().split("/") || "@fechaMinima.ToShortDateString()".split("/");
+            var fin = $('#fechaFin').val().split("/") || "@fechaMaxima.ToShortDateString()".split("/");
+            var marcas = $("#selectMarca").val();
+            var modelos = [];
+            $("#selectModelo").find(":selected").each(function () { modelos.push($(this).data("modelo").toString()); });
+
+            //Obtener las fechas en formato UTC, independiente de localizacion
+            fechaInicio = Date.UTC(inicio[2], inicio[1], inicio[0]);
+            fechaFin = Date.UTC(fin[2], fin[1], fin[0], 23,59,59);
+
+            //Obtener los modelos si se filtraron todos
+            if (marcas.length == 0) {
+                $("#selectMarca option").each(function () { marcas.push($(this).val().toString()); });
+            }
+            //if (modelos.length == 0) {
+            //    $("#selectModelo option").each(function () { modelos.push($(this).data("modelo").toString()); });
+            //}
+
+            var ventas = $("#tablaVentas").data("ventas").filter(function () {
+                var modelosVenta = $(this).data("modelos").toString().split(',');
+                var marcasVenta = $(this).data("marcas").toString().split(',');
+                var fechaVenta = $(this).data("fecha").split("/");
+                var fecha = Date.UTC(fechaVenta[2], fechaVenta[1], fechaVenta[0]);
+                return (modelos.length == 0 || modelos.every(modelo => modelosVenta.includes(modelo)))
+                    && marcas.some(marca => marcasVenta.includes(marca))
+                    && fecha >= fechaInicio && fecha <= fechaFin;
+            });
+            var montoTotal = 0.0;
+            ventas.each(function () { montoTotal += parseFloat($(this).data("monto")); });
+            $("#tablaVentas tbody#tablaVentasBody").html(ventas);
+            $("#mensajeReporte").html("Ventas realizadas entre el dia " + inicio[0] + ", mes " + inicio[1] + " y año " + inicio[2] + " hasta el dia " + fin[0] + ", mes " + fin[1] + " y año " + fin[2] + " de los telefonos de marcas " + marcas + " y modelos " + modelos);
+            $("#totalVentas").html("$ " + montoTotal.format(2, 3, '.', ','));
+        }
+
+          //Actualiza las opciones de las selecciones de modelos de acuerdo a las marcas seleccionadas
+        function actualizarMarcasYModelos() {
+            // Clonar las opciones de los modelos para no perderlos cuando se filtre de nuevo.
+            if ($("#selectMarca").data('opciones') === undefined) {
+                $("#selectMarca").data("opciones", $("#selectModelo option").clone());
+            }
+
+            // Obtener las marcas seleccionadas para filtrar los modelos.
+            var marcas = $("#selectMarca").val();
+            var opciones = $("#selectMarca").data("opciones").filter(function () {
+                return marcas.includes($(this).val());
+            });
+
+            //Asignar los modelos filtrados, o todos si no hay seleccion de ninguna marca.
+            if (opciones.length > 0) {
+                $('#selectModelo').html(opciones);
+            } else {
+                $('#selectModelo').html($("#selectMarca").data("opciones"));
+            }
+
+            actualizarTablaVentas();
+        }
+    </script>
+}
+

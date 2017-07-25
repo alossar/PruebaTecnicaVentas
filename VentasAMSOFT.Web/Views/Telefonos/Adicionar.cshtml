@@ -1,0 +1,76 @@
+﻿@using VentasAMSOFT.Model
+@model Telefono
+
+@{
+    ViewBag.Title = "Adicionar un Telefono";
+    Layout = "~/Views/Shared/_VentasLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <p class="text-muted"><a href="@Url.Action("Index", "Home")">Home</a> > <a href="@Url.Action("Index", "Telefonos")">Telefonos</a> > Adicionar un Telefono</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-9">
+        @using (Html.BeginForm("Adicionar", "Telefonos", FormMethod.Post, new { @class = "form-horizontal" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label for="Marca" class="col-sm-2 control-label">Marca</label>
+                <div class="col-sm-10">
+                    <input id="Marca" name="Marca" type="text" class="form-control-mdl" placeholder="Marca" autocomplete="off" required>
+                    <small class="text-muted">Campo requerido</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="Modelo" class="col-sm-2 control-label">Modelo</label>
+                <div class="col-sm-10">
+                    <input id="Modelo" name="Modelo" type="text" class="form-control-mdl" placeholder="Modelo" autocomplete="off" required>
+                    <small class="text-muted">Campo requerido</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="Ano" class="col-sm-2 control-label">Año</label>
+                <div class="col-sm-10">
+                    <input id="Ano" name="Ano" type="number" class="form-control-mdl control-numerico" placeholder="Año" autocomplete="off" value="@DateTime.UtcNow.Year" max="@DateTime.UtcNow.Year" min="1900" required>
+                    <small class="text-muted">Campo requerido</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="Ano" class="col-sm-2 control-label">Precio de Venta</label>
+                <div class="col-sm-10">
+                    <input id="PrecioVenta" name="PrecioVenta" type="number" class="form-control-mdl control-numerico control-numerico-decimal" placeholder="Precio de Venta" required min="0" step="0.01">
+                    <small class="text-muted">Campo requerido</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="CantidadDisponible" class="col-sm-2 control-label">Cantidad Disponible</label>
+                <div class="col-sm-10">
+                    <input id="CantidadDisponible" name="CantidadDisponible" type="number" class="form-control-mdl control-numerico" placeholder="Cantidad Disponible" required min="0">
+                    <small class="text-muted">Campo requerido</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-info btn-outline">Adicionar</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        
+        //Permitir solamente las entradas numericas del teclado.
+        $('.control-numerico').keypress(function (key) {
+            var incluirDecimal = $(this).hasClass("control-numerico-decimal");
+            if ((key.charCode < 48 || key.charCode > 57) && key.charCode != 0 && key.charCode != 8 && key.charCode != 9 && (!incluirDecimal || key.charCode != 44)) return false;
+        });
+
+    </script>
+}

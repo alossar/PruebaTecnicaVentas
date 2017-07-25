@@ -1,0 +1,59 @@
+﻿@using VentasAMSOFT.Model
+@model Cliente
+
+@{
+    ViewBag.Title = "Adicionar un Cliente";
+    Layout = "~/Views/Shared/_VentasLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <p class="text-muted"><a href="@Url.Action("Index", "Home")">Home</a> > <a href="@Url.Action("Index", "Clientes")">Clientes</a> > Adicionar un Cliente</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-9">
+        @using (Html.BeginForm("Adicionar", "Clientes", FormMethod.Post, new { @class = "form-horizontal" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label for="Nombre" class="col-sm-2 control-label">Nombre</label>
+                <div class="col-sm-10">
+                    <input id="Nombre" name="Nombre" type="text" class="form-control-mdl" placeholder="Nombre" autocomplete="off" required>
+                    <small class="text-muted">Campo requerido</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="Direccion" class="col-sm-2 control-label">Direccion</label>
+                <div class="col-sm-10">
+                    <input id="Direccion" name="Direccion" type="text" class="form-control-mdl" placeholder="Direccion" autocomplete="off">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="Telefono" class="col-sm-2 control-label">Telefono</label>
+                <div class="col-sm-10">
+                    <input id="Telefono" name="Telefono" type="text" class="form-control-mdl control-numerico" placeholder="Telefono" autocomplete="off">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-info btn-outline">Adicionar</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+
+        //Permitir solamente las entradas numericas del teclado.
+        $('.control-numerico').keypress(function (key) {
+            if ((key.charCode < 48 || key.charCode > 57) && key.charCode != 0 && key.charCode != 8 && key.charCode != 9) return false;
+        });
+
+    </script>
+}

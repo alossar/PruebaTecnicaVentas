@@ -1,0 +1,93 @@
+﻿@using VentasAMSOFT.Model
+@model IEnumerable<Cliente>
+
+@{
+    ViewBag.Title = "Clientes";
+    Layout = "~/Views/Shared/_VentasLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <a href="@Url.Action("Adicionar", "Clientes")" class="btn btn-info btn-outline btn-xs pull-right">Adicionar un Cliente</a>
+        <p class="text-muted"><a href="@Url.Action("Index", "Home")">Home</a> > Registros de Clientes</p>
+    </div>
+</div>
+
+@if (Model == null || Model.Count() == 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <p>Aun no se encuentran clientes registrados. <a href="@Url.Action("Adicionar", "Clientes")">Registra</a> un cliente para continuar. </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10 col-xs-12">
+            <div id="divMensajes"></div>
+            @using (Html.BeginForm("Editar", "Clientes", FormMethod.Post, new { @class = "form-horizontal" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="well">
+                    <div class="table-responsive">
+                        <table class="table table-condensed table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Direccion</th>
+                                    <th>Telefono</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count(); i++)
+                                {
+                                    Cliente cliente = Model.ElementAt(i);
+                                    <tr class="@(cliente.Habilitado?"":"warning")">
+                                        <td>
+                                            <input name="[@i].IdCliente" value="@cliente.IdCliente" type="hidden" />
+                                            <input name="[@i].Habilitado" value="@cliente.Habilitado.ToString()" type="hidden" />
+                                            <input name="[@i].Nombre" class="form-control-mdl" value="@cliente.Nombre" type="text" placeholder="" autocomplete="off" required />
+                                        </td>
+                                        <td><input name="[@i].Direccion" class="form-control-mdl" value="@cliente.Direccion" type="text" placeholder="Direccion..." autocomplete="off" /></td>
+                                        <td><input name="[@i].Telefono" class="form-control-mdl" value="@cliente.Telefono" type="text" placeholder="Telefono..." autocomplete="off" /></td>
+                                        <td>
+                                            @if (!cliente.Habilitado)
+                                            {
+                                                <a href="@Url.Action("Habilitar", "Clientes", new { cliente = cliente.IdCliente })" cla class="btn btn-xs btn-outline btn-info">Habilitar</a>
+                                            }
+                                            else
+                                            {
+                                                <a href="@Url.Action("Inhabilitar", "Clientes", new { cliente = cliente.IdCliente })" cla class="btn btn-xs btn-outline btn-warning">Inhabilitar</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-success btn-outline pull-right">Guardar Cambios</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script type="text/javascript">
+
+        //Permitir solamente las entradas numericas del teclado.
+        $('.control-numerico').keypress(function (key) {
+            if ((key.charCode < 48 || key.charCode > 57) && key.charCode != 0 && key.charCode != 8 && key.charCode != 9) return false;
+        });
+
+    </script>
+}
